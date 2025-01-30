@@ -1,0 +1,8 @@
+apiVersion: v2
+name: goldengate
+description: A Helm chart for deploying Oracle GoldenGate
+version: 0.1.0
+appVersion: "latest"
+maintainers:
+  - name: Stephen Balousek
+    email: stephen.balousek@oracle.com

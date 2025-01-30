@@ -1,0 +1,71 @@
+replicaCount: 1
+
+image:
+  repository: container-registry.oracle.com/goldengate/goldengate-free
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  securePort: 443
+
+resources:
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+  requests:
+    cpu: "1"
+    memory: "2Gi"
+
+persistence:
+  enabled: true
+  size: 10Gi  # Defines the storage size for all PVCs
+  storageClass: gp3  # Storage class used for PVCs
+  pvcNames:
+    oggData: "goldengate-pvc-ogg-data"
+    oggDeploymentHome: "goldengate-pvc-ogg-deployment-home"
+    oggTemporaryFiles: "goldengate-pvc-ogg-temporary-files"
+    oggScripts: "goldengate-pvc-ogg-scripts"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+env:
+  OGG_HOME: /u01/ogg
+  OGG_DEPLOYMENT_HOME: /u02
+  OGG_TEMPORARY_FILES: /u03
+  OGG_DEPLOYMENT_SCRIPTS: /u01/ogg/scripts
+  PATH: /u01/ogg/bin:${PATH}
+
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 1001880000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  runAsNonRoot: true
+  runAsUser: 1001880000
+
+healthCheck:
+  enabled: true
+  path: /usr/local/bin/healthcheck
+  initialDelaySeconds: 90
+  periodSeconds: 30
+  failureThreshold: 1
+  successThreshold: 1  
+
+config:
+  OGG_HOME: "/u01/ogg"
+  OGG_DEPLOYMENT_HOME: "/u02"
+  OGG_TEMPORARY_FILES: "/u03"
+  OGG_DEPLOYMENT_SCRIPTS: "/u01/ogg/scripts"
+  AdminUsername: "oggadmin"
+  AdminPassword: "Welcome##123"

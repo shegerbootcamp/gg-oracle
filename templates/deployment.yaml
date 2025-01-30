@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goldengate-goldengate
+  labels:
+    app: goldengate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goldengate
+  template:
+    metadata:
+      labels:
+        app: goldengate
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1001880000
+        seccompProfile:
+          type: RuntimeDefault
+
+      initContainers:
+        - name: init-permissions
+          image: busybox:1.35.0-uclibc
+          command:
+            - "sh"
+            - "-c"
+            - |
+              chown -R 1001880000:1001880000 /u01
+              chown -R 1001880000:1001880000 /u02
+              chown -R 1001880000:1001880000 /u03
+              chown -R 1001880000:1001880000 /u01/ogg/scripts
+              chmod g+s /u02 /u03
+          securityContext:
+            runAsUser: 1001880000  # Run as root to modify ownership
+            privileged: false
+            allowPrivilegeEscalation: false
+
+      containers:
+        - name: goldengate
+          image: "cloudsheger/goldengate-free:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 1001880000
+          env:
+            - name: OGG_HOME
+              value: "/u01/ogg"
+            - name: OGG_DEPLOYMENT_HOME
+              value: "/u02"
+            - name: OGG_TEMPORARY_FILES
+              value: "/u03"
+            - name: OGG_DEPLOYMENT_SCRIPTS
+              value: "/u01/ogg/scripts"
+            - name: OGG_ADMIN_USERNAME
+              value: "oggadmin"
+            - name: OGG_ADMIN_PASSWORD
+              value: "Welcome##123"
+          volumeMounts:
+            - name: ogg-data
+              mountPath: /u01/app/ogg
+            - name: ogg-deployment-home
+              mountPath: /u02
+            - name: ogg-temporary-files
+              mountPath: /u03
+            - name: ogg-scripts
+              mountPath: /u01/ogg/scripts
+
+      volumes:
+        - name: ogg-data
+          persistentVolumeClaim:
+            claimName: "ogg-data-pvc"
+        - name: ogg-deployment-home
+          persistentVolumeClaim:
+            claimName: "ogg-deployment-home-pvc"
+        - name: ogg-temporary-files
+          persistentVolumeClaim:
+            claimName: "ogg-temporary-files-pvc"
+        - name: ogg-scripts
+          persistentVolumeClaim:
+            claimName: "ogg-scripts-pvc"
