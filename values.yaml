@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: container-registry.oracle.com/goldengate/goldengate-free
+  repository: cloudsheger/goldengate-free
   tag: latest
   pullPolicy: IfNotPresent
 
